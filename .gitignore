@@ -1,0 +1,17 @@
+
+.vs/GL_framework/v15/.suo
+*.db
+*.ipch
+*.vcxproj
+*.user
+*.exe
+*.exp
+*.ilk
+*.lib
+*.pdb
+*.log
+*.tlog
+*.obj
+*.idb
+*.log
+*.vcxproj
