@@ -94,8 +94,8 @@
       <SubSystem>Console</SubSystem>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy $(ProjectDir)libs\glew32.dll $(OutDir) /y /d
-xcopy $(ProjectDir)libs\SDL2.dll $(OutDir) /y /d</Command>
+      <Command>xcopy "$(ProjectDir)libs\glew32.dll" "$(OutDir)" /y /d
+xcopy "$(ProjectDir)libs\SDL2.dll" "$(OutDir)" /y /d</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
