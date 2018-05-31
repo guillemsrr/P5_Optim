@@ -40,7 +40,8 @@ namespace Model
 	void updateModel(glm::mat4 &objMat, glm::mat4& transform);
 
 	void updateModels(double time);
-	void drawModels(double time);
+	void drawTrump(double time);
+	void drawChicken(double time);
 	void drawSpecificModel(GLuint &vao, glm::mat4 &objMat, std::vector < glm::vec3 > &vertices, glm::vec4 color, float time);
 
 }
@@ -66,7 +67,7 @@ namespace RenderVars
 		bool waspressed = false;
 	} prevMouse;
 
-	float panv[3] = { 0.f, -5.f, -15.f };
+	float panv[3] = { 0.f, 10.f, -10.f };
 	float rota[2] = { 0.f, 0.f };
 }
 namespace RV = RenderVars;
@@ -86,21 +87,33 @@ void loadAllModels()
 
 void drawLoop(double currentTime)
 {
-	chickenPosition = { 0.f,0.f,0.f };
+	bool isTrump = false;
+	chickenPosition = { 0.f,1.2f,0.f };
 	trumpPosition = { 0.f,0.f,0.f };
 
-	for (int i = 0; i <= 10; i++)
+	for (int i = 0; i <= 10; i++)//columnes
 	{
-		for (int j = 0; j <= 10; j++)
+		trumpPosition.x = 0.f;
+		chickenPosition.x = 0.f;
+
+		for (int j = 0; j <= 10; j++)//files
 		{
-			std::cout << i << j<<std::endl;
 			trumpPosition.x += 1.0;
 			chickenPosition.x += 1.0;
 			Model::updateModels(currentTime);
+			if (isTrump)
+			{
+				Model::drawTrump(currentTime);
+			}
+			else
+			{
+				Model::drawChicken(currentTime);
+			}
+			isTrump = !isTrump;
 		}
 		trumpPosition.y -= 1.0;
 		chickenPosition.y -= 1.0;
-		Model::drawModels(currentTime);
+		//isTrump = !isTrump;
 	}
 }
 
@@ -281,7 +294,7 @@ namespace Model
 
 	//SCALE MATRICES
 	glm::mat4 trumpScale = glm::scale(glm::mat4(), glm::vec3(0.1, 0.1, 0.1));
-	glm::mat4 chickenScale = glm::scale(glm::mat4(), glm::vec3(0.006, 0.006, 0.006));
+	glm::mat4 chickenScale = glm::scale(glm::mat4(), glm::vec3(0.01, 0.01, 0.01));
 
 	//COLORS:
 	glm::vec4 trumpColor = { 0.f,0.f,1.f,1.f };
@@ -395,10 +408,17 @@ namespace Model
 		updateModel(chickenObjMat, glm::translate(glm::mat4(), chickenPosition) * chickenScale);;
 	}
 
-	void drawModels(double time)
+	void drawTrump(double time)
 	{
-
 		drawSpecificModel(trumpVao, trumpObjMat, trumpVertices, trumpColor, time);
+
+		glUseProgram(0);
+		glBindVertexArray(0);
+		glDisable(GL_PRIMITIVE_RESTART);
+	}
+
+	void drawChicken(double time)
+	{
 		drawSpecificModel(chickenVao, chickenObjMat, chickenVertices, chickenColor, time);
 
 		glUseProgram(0);
