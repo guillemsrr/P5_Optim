@@ -7,19 +7,24 @@
 #include <imgui\imgui.h>
 #include <imgui\imgui_impl_sdl_gl3.h>
 #include "GL_framework.h"
+#include <iostream>
 
-#pragma region Variables
+#pragma region Global Variables
+static int mode = 1;
 //CHICKEN
 std::vector< glm::vec3 > chickenVertices;
 std::vector< glm::vec2 > chickenUvs;
 std::vector< glm::vec3 > chickenNormals;
+
+glm::vec3 chickenPosition = { 0.f,0.f,0.f };
 
 //TRUMP
 std::vector< glm::vec3 > trumpVertices;
 std::vector< glm::vec2 > trumpUvs;
 std::vector< glm::vec3 > trumpNormals;
 
-static int mode = 1;
+glm::vec3 trumpPosition = { 0.f,0.f,0.f };
+
 #pragma endregion
 
 
@@ -38,10 +43,6 @@ namespace Model
 	void drawModels(double time);
 	void drawSpecificModel(GLuint &vao, glm::mat4 &objMat, std::vector < glm::vec3 > &vertices, glm::vec4 color, float time);
 
-	//CAMERA VARIABLES
-	glm::vec3 trumpPosition;
-	glm::vec3 chickenPosition;
-
 }
 namespace ImGui {
 	void Render();
@@ -50,7 +51,7 @@ namespace RenderVars
 {
 	const float FOV = glm::radians(65.f);
 	const float zNear = 1.f;
-	const float zFar = 50.f;
+	const float zFar = 10000.f;
 
 	glm::mat4 _projection;
 	glm::mat4 _modelView;
@@ -81,6 +82,26 @@ void loadAllModels()
 	bool res = loadOBJ("trump.obj", trumpVertices, trumpUvs, trumpNormals);
 	res = loadOBJ("chicken.obj", chickenVertices, chickenUvs, chickenNormals);
 	Model::setupModels();
+}
+
+void drawLoop(double currentTime)
+{
+	chickenPosition = { 0.f,0.f,0.f };
+	trumpPosition = { 0.f,0.f,0.f };
+
+	for (int i = 0; i <= 10; i++)
+	{
+		for (int j = 0; j <= 10; j++)
+		{
+			std::cout << i << j<<std::endl;
+			trumpPosition.x += 1.0;
+			chickenPosition.x += 1.0;
+			Model::updateModels(currentTime);
+		}
+		trumpPosition.y -= 1.0;
+		chickenPosition.y -= 1.0;
+		Model::drawModels(currentTime);
+	}
 }
 
 
@@ -189,6 +210,7 @@ void GLinit(int width, int height) {
 
 	if (mode == 1)
 	{
+		loadAllModels();
 		Model::setupModels();
 	}
 	else if (mode == 2)
@@ -212,7 +234,7 @@ void GLrender(double currentTime) {
 
 	if (mode == 1)
 	{
-		Model::drawModels(currentTime);
+		drawLoop(currentTime);
 	}
 	else if (mode == 2)
 	{
@@ -258,7 +280,7 @@ namespace Model
 
 
 	//SCALE MATRICES
-	glm::mat4 trumpScale = glm::scale(glm::mat4(), glm::vec3(0.045, 0.045, 0.045));
+	glm::mat4 trumpScale = glm::scale(glm::mat4(), glm::vec3(0.1, 0.1, 0.1));
 	glm::mat4 chickenScale = glm::scale(glm::mat4(), glm::vec3(0.006, 0.006, 0.006));
 
 	//COLORS:
@@ -291,7 +313,7 @@ namespace Model
 		uniform mat4 mv_Mat;\n\
 		uniform vec4 color;\n\
 		void main() {\n\
-			out_Color = vec4(color.xyz * dot(vert_Normal, mv_Mat*vec4(0.0, 1.0, 0.0, 0.0)) + color.xyz * 0.3, 1.0 );\n\
+			out_Color = vec4(color.xyz * dot(normalize(vert_Normal), mv_Mat*vec4(0.0, 1.0, 0.0, 0.0)) + color.xyz * 0.3, 1.0 );\n\
 		}";
 
 #pragma endregion
@@ -367,11 +389,9 @@ namespace Model
 	void updateModels(double time)
 	{
 		//TRUMP
-		//trumpPosition = ;
 		updateModel(trumpObjMat, glm::translate(glm::mat4(), trumpPosition) * trumpScale);
 
 		//CHICKEN
-		//chickenPosition = ;
 		updateModel(chickenObjMat, glm::translate(glm::mat4(), chickenPosition) * chickenScale);;
 	}
 
