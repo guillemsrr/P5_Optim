@@ -7,8 +7,11 @@
 #include <glm\gtc\matrix_transform.hpp>
 
 
-bool loadObj(const char * path, std::vector < glm::vec3 > & out_vertices, std::vector < glm::vec2 > & out_uvs, std::vector < glm::vec3 > & out_normals){
-
+bool loadOBJ(const char * path,
+	std::vector < glm::vec3 > & out_vertices,
+	std::vector < glm::vec2 > & out_uvs,
+	std::vector < glm::vec3 > & out_normals
+) {
 	std::vector< unsigned int > vertexIndices, uvIndices, normalIndices;
 	std::vector< glm::vec3 > temp_vertices;
 	std::vector< glm::vec2 > temp_uvs;
@@ -61,9 +64,11 @@ bool loadObj(const char * path, std::vector < glm::vec3 > & out_vertices, std::v
 			normalIndices.push_back(normalIndex[1]);
 			normalIndices.push_back(normalIndex[2]);
 		}
+
 	}
 
 	// For each vertex of each triangle
+
 
 	for (unsigned int i = 0; i < vertexIndices.size(); i++) {
 		unsigned int vertexIndex = vertexIndices[i];
@@ -78,8 +83,6 @@ bool loadObj(const char * path, std::vector < glm::vec3 > & out_vertices, std::v
 	}
 
 
+
 	return true;
 }
-
-
-

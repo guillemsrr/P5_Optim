@@ -74,6 +74,16 @@ namespace RV = RenderVars;
 
 #pragma region Functions
 
+extern bool loadOBJ(const char * path, std::vector < glm::vec3 > & out_vertices, std::vector < glm::vec2 > & out_uvs, std::vector < glm::vec3 > & out_normals);
+
+void loadAllModels()
+{
+	bool res = loadOBJ("trump.obj", trumpVertices, trumpUvs, trumpNormals);
+	res = loadOBJ("chicken.obj", chickenVertices, chickenUvs, chickenNormals);
+	Model::setupModels();
+}
+
+
 #pragma region defaultFunctions
 void GUI()
 {
