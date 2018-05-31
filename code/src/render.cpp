@@ -4,7 +4,8 @@
 #include <cstdio>
 #include <cassert>
 #include <vector>
-
+#include <imgui\imgui.h>
+#include <imgui\imgui_impl_sdl_gl3.h>
 #include "GL_framework.h"
 
 
@@ -24,6 +25,23 @@ namespace ImGui {
 	void Render();
 }
 
+void GUI()
+{
+	bool show = true;
+	ImGui::Begin("Simulation Parameters", &show, 0);
+
+	// Do your GUI code here....
+	{
+		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);//FrameRate
+		static int e = 0;
+		ImGui::RadioButton("Loop", &e, 0);
+		ImGui::RadioButton("Instancing", &e, 1);
+		ImGui::RadioButton("MultiDraw", &e, 2);
+	}
+	// .........................
+
+	ImGui::End();
+}
 
 namespace Model
 {
@@ -44,7 +62,6 @@ namespace Model
 	glm::vec3 chickenPosition;
 
 }
-
 
 ////////////////
 
@@ -70,17 +87,22 @@ namespace RenderVars {
 }
 namespace RV = RenderVars;
 
-void GLResize(int width, int height) {
+#pragma region Functions
+void GLResize(int width, int height)
+{
 	glViewport(0, 0, width, height);
-	if(height != 0) RV::_projection = glm::perspective(RV::FOV, (float)width / (float)height, RV::zNear, RV::zFar);
+	if (height != 0) RV::_projection = glm::perspective(RV::FOV, (float)width / (float)height, RV::zNear, RV::zFar);
 	else RV::_projection = glm::perspective(RV::FOV, 0.f, RV::zNear, RV::zFar);
 }
 
-void GLmousecb(MouseEvent ev) {
-	if(RV::prevMouse.waspressed && RV::prevMouse.button == ev.button) {
+void GLmousecb(MouseEvent ev)
+{
+	if (RV::prevMouse.waspressed && RV::prevMouse.button == ev.button)
+	{
 		float diffx = ev.posx - RV::prevMouse.lastx;
 		float diffy = ev.posy - RV::prevMouse.lasty;
-		switch(ev.button) {
+		switch (ev.button)
+		{
 		case MouseEvent::Button::Left: // ROTATE
 			RV::rota[0] += diffx * 0.005f;
 			RV::rota[1] += diffy * 0.005f;
@@ -94,13 +116,52 @@ void GLmousecb(MouseEvent ev) {
 			break;
 		default: break;
 		}
-	} else {
+	}
+	else
+	{
 		RV::prevMouse.button = ev.button;
 		RV::prevMouse.waspressed = true;
 	}
 	RV::prevMouse.lastx = ev.posx;
 	RV::prevMouse.lasty = ev.posy;
 }
+//////////////////////////////////// COMPILE AND LINK
+GLuint compileShader(const char* shaderStr, GLenum shaderType, const char* name = "")
+{
+	GLuint shader = glCreateShader(shaderType);
+	glShaderSource(shader, 1, &shaderStr, NULL);
+	glCompileShader(shader);
+	GLint res;
+	glGetShaderiv(shader, GL_COMPILE_STATUS, &res);
+	if (res == GL_FALSE)
+	{
+		glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &res);
+		char *buff = new char[res];
+		glGetShaderInfoLog(shader, res, &res, buff);
+		fprintf(stderr, "Error Shader %s: %s", name, buff);
+		delete[] buff;
+		glDeleteShader(shader);
+		return 0;
+	}
+	return shader;
+}
+void linkProgram(GLuint program)
+{
+	glLinkProgram(program);
+	GLint res;
+	glGetProgramiv(program, GL_LINK_STATUS, &res);
+	if (res == GL_FALSE)
+	{
+		glGetProgramiv(program, GL_INFO_LOG_LENGTH, &res);
+		char *buff = new char[res];
+		glGetProgramInfoLog(program, res, &res, buff);
+		fprintf(stderr, "Error Link: %s", buff);
+		delete[] buff;
+	}
+}
+
+#pragma endregion
+
 
 void GLinit(int width, int height) {
 	glViewport(0, 0, width, height);
@@ -132,36 +193,6 @@ void GLrender(double currentTime) {
 }
 
 
-//////////////////////////////////// COMPILE AND LINK
-GLuint compileShader(const char* shaderStr, GLenum shaderType, const char* name="") {
-	GLuint shader = glCreateShader(shaderType);
-	glShaderSource(shader, 1, &shaderStr, NULL);
-	glCompileShader(shader);
-	GLint res;
-	glGetShaderiv(shader, GL_COMPILE_STATUS, &res);
-	if (res == GL_FALSE) {
-		glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &res);
-		char *buff = new char[res];
-		glGetShaderInfoLog(shader, res, &res, buff);
-		fprintf(stderr, "Error Shader %s: %s", name, buff);
-		delete[] buff;
-		glDeleteShader(shader);
-		return 0;
-	}
-	return shader;
-}
-void linkProgram(GLuint program) {
-	glLinkProgram(program);
-	GLint res;
-	glGetProgramiv(program, GL_LINK_STATUS, &res);
-	if (res == GL_FALSE) {
-		glGetProgramiv(program, GL_INFO_LOG_LENGTH, &res);
-		char *buff = new char[res];
-		glGetProgramInfoLog(program, res, &res, buff);
-		fprintf(stderr, "Error Link: %s", buff);
-		delete[] buff;
-	}
-}
 
 //////////////////////////////////////////////////////////////////////////////////////////////////// MODEL
 namespace Model
@@ -293,11 +324,11 @@ namespace Model
 	void updateModels(double time)
 	{
 		//TRUMP
-		trumpPosition = ;
+		//trumpPosition = ;
 		updateModel(trumpObjMat, glm::translate(glm::mat4(), trumpPosition) * trumpScale);
 
 		//CHICKEN
-		chickenPosition = ;
+		//chickenPosition = ;
 		updateModel(chickenObjMat, glm::translate(glm::mat4(), chickenPosition) * chickenScale);;
 	}
 
