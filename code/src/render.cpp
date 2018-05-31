@@ -8,7 +8,7 @@
 #include <imgui\imgui_impl_sdl_gl3.h>
 #include "GL_framework.h"
 
-
+#pragma region Variables
 //CHICKEN
 std::vector< glm::vec3 > chickenVertices;
 std::vector< glm::vec2 > chickenUvs;
@@ -19,30 +19,11 @@ std::vector< glm::vec3 > trumpVertices;
 std::vector< glm::vec2 > trumpUvs;
 std::vector< glm::vec3 > trumpNormals;
 
+static int mode = 1;
+#pragma endregion
 
-///////// fw decl
-namespace ImGui {
-	void Render();
-}
 
-void GUI()
-{
-	bool show = true;
-	ImGui::Begin("Simulation Parameters", &show, 0);
-
-	// Do your GUI code here....
-	{
-		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);//FrameRate
-		static int e = 0;
-		ImGui::RadioButton("Loop", &e, 0);
-		ImGui::RadioButton("Instancing", &e, 1);
-		ImGui::RadioButton("MultiDraw", &e, 2);
-	}
-	// .........................
-
-	ImGui::End();
-}
-
+#pragma region Namespaces
 namespace Model
 {
 	void setupModels();
@@ -62,10 +43,11 @@ namespace Model
 	glm::vec3 chickenPosition;
 
 }
-
-////////////////
-
-namespace RenderVars {
+namespace ImGui {
+	void Render();
+}
+namespace RenderVars
+{
 	const float FOV = glm::radians(65.f);
 	const float zNear = 1.f;
 	const float zFar = 50.f;
@@ -76,7 +58,8 @@ namespace RenderVars {
 	glm::mat4 _inv_modelview;
 	glm::vec4 _cameraPoint;
 
-	struct prevMouse {
+	struct prevMouse
+	{
 		float lastx, lasty;
 		MouseEvent::Button button = MouseEvent::Button::None;
 		bool waspressed = false;
@@ -86,8 +69,27 @@ namespace RenderVars {
 	float rota[2] = { 0.f, 0.f };
 }
 namespace RV = RenderVars;
+#pragma endregion
+
 
 #pragma region Functions
+void GUI()
+{
+	bool show = true;
+	ImGui::Begin("Simulation Parameters", &show, 0);
+
+	// Do your GUI code here....
+	{
+		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);//FrameRate
+
+		ImGui::RadioButton("Loop", &mode, 1);
+		ImGui::RadioButton("Instancing", &mode, 2);
+		ImGui::RadioButton("MultiDraw", &mode, 3);
+	}
+	// .........................
+
+	ImGui::End();
+}
 void GLResize(int width, int height)
 {
 	glViewport(0, 0, width, height);
@@ -162,7 +164,7 @@ void linkProgram(GLuint program)
 
 #pragma endregion
 
-
+//////////////////////////////////////////////////////////////////////////////////////////////////// INIT
 void GLinit(int width, int height) {
 	glViewport(0, 0, width, height);
 	glClearColor(0.2f, 0.2f, 0.2f, 1.f);
@@ -172,27 +174,56 @@ void GLinit(int width, int height) {
 	glEnable(GL_CULL_FACE);
 
 	RV::_projection = glm::perspective(RV::FOV, (float)width/(float)height, RV::zNear, RV::zFar);
+
+	if (mode == 1)
+	{
+
+	}
+	else if (mode == 2)
+	{
+
+	}
+	else if (mode == 3)
+	{
+
+	}
 }
-
-void GLcleanup() {
-
-	Model::cleanupModels();
-}
-
+//////////////////////////////////////////////////////////////////////////////////////////////////// RENDER
 void GLrender(double currentTime) {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+	//CAMERA
 	RV::_modelView = glm::mat4(1.f);
 	RV::_modelView = glm::translate(RV::_modelView, glm::vec3(RV::panv[0], RV::panv[1], RV::panv[2]));
 	RV::_modelView = glm::rotate(RV::_modelView, RV::rota[1], glm::vec3(1.f, 0.f, 0.f));
 	RV::_modelView = glm::rotate(RV::_modelView, RV::rota[0], glm::vec3(0.f, 1.f, 0.f));
+
+	if (mode == 1)
+	{
+
+	}
+	else if (mode == 2)
+	{
+
+	}
+	else if (mode == 3)
+	{
+
+	}
+
+
 
 	RV::_MVP = RV::_projection * RV::_modelView;
 
 	ImGui::Render();
 }
 
+//////////////////////////////////////////////////////////////////////////////////////////////////// CLEANUP
+void GLcleanup()
+{
 
+	Model::cleanupModels();
+}
 
 //////////////////////////////////////////////////////////////////////////////////////////////////// MODEL
 namespace Model
