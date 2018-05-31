@@ -16,3 +16,7 @@
 *.log
 *.vcxproj
 /.vs
+
+x64/
+
+code/
