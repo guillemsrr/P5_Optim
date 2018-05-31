@@ -39,7 +39,8 @@ namespace Model
 
 	void updateModel(glm::mat4 &objMat, glm::mat4& transform);
 
-	void updateModels(double time);
+	void updateTrump(double time);
+	void updateChicken(double time);
 	void drawTrump(double time);
 	void drawChicken(double time);
 	void drawSpecificModel(GLuint &vao, glm::mat4 &objMat, std::vector < glm::vec3 > &vertices, glm::vec4 color, float time);
@@ -91,29 +92,30 @@ void drawLoop(double currentTime)
 	chickenPosition = { 0.f,1.2f,0.f };
 	trumpPosition = { 0.f,0.f,0.f };
 
-	for (int i = 0; i <= 10; i++)//columnes
+	for (int i = 0; i <= 100; i++)//columnes
 	{
 		trumpPosition.x = 0.f;
 		chickenPosition.x = 0.f;
 
-		for (int j = 0; j <= 10; j++)//files
+		for (int j = 0; j <= 100; j++)//files
 		{
-			trumpPosition.x += 1.0;
+			trumpPosition.x += 1.f;
 			chickenPosition.x += 1.0;
-			Model::updateModels(currentTime);
+			
 			if (isTrump)
 			{
+				Model::updateTrump(currentTime);
 				Model::drawTrump(currentTime);
 			}
 			else
 			{
+				Model::updateChicken(currentTime);
 				Model::drawChicken(currentTime);
 			}
 			isTrump = !isTrump;
 		}
-		trumpPosition.y -= 1.0;
-		chickenPosition.y -= 1.0;
-		//isTrump = !isTrump;
+		trumpPosition.y -= 1.3f;
+		chickenPosition.y -= 1.3f;
 	}
 }
 
@@ -399,13 +401,15 @@ namespace Model
 		objMat = transform;
 	}
 
-	void updateModels(double time)
+	void updateTrump(double time)
 	{
 		//TRUMP
 		updateModel(trumpObjMat, glm::translate(glm::mat4(), trumpPosition) * trumpScale);
-
+	}
+	void updateChicken(double time)
+	{
 		//CHICKEN
-		updateModel(chickenObjMat, glm::translate(glm::mat4(), chickenPosition) * chickenScale);;
+		updateModel(chickenObjMat, glm::translate(glm::mat4(), chickenPosition) * chickenScale);
 	}
 
 	void drawTrump(double time)
