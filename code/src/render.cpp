@@ -73,6 +73,8 @@ namespace RV = RenderVars;
 
 
 #pragma region Functions
+
+#pragma region defaultFunctions
 void GUI()
 {
 	bool show = true;
@@ -161,7 +163,7 @@ void linkProgram(GLuint program)
 		delete[] buff;
 	}
 }
-
+#pragma endregion
 #pragma endregion
 
 //////////////////////////////////////////////////////////////////////////////////////////////////// INIT
@@ -177,7 +179,7 @@ void GLinit(int width, int height) {
 
 	if (mode == 1)
 	{
-
+		Model::setupModels();
 	}
 	else if (mode == 2)
 	{
@@ -200,7 +202,7 @@ void GLrender(double currentTime) {
 
 	if (mode == 1)
 	{
-
+		Model::drawModels(currentTime);
 	}
 	else if (mode == 2)
 	{
