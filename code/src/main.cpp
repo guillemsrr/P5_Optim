@@ -7,6 +7,9 @@
 
 #include "GL_framework.h"
 
+extern int mode = 1;
+int lastMode = mode;
+int display_w, display_h;
 
 /*extern void PhysicsInit();
 extern void PhysicsUpdate(float dt);
@@ -84,7 +87,7 @@ int main(int argc, char** argv) {
 	// Disable V-Sync
 	SDL_GL_SetSwapInterval(0);
 
-	int display_w, display_h;
+
 	SDL_GL_GetDrawableSize(mainwindow, &display_w, &display_h);
 	// Init scene
 	GLinit(display_w, display_h);
@@ -120,6 +123,14 @@ int main(int argc, char** argv) {
 		
 		
 		GUI();
+		//RELOAD INIT************************************************************************************************************************
+		if (lastMode != mode)
+		{
+			GLinit(display_w, display_h);
+			lastMode = mode;
+		}
+		//************************************************************************************************************************
+
 		//PhysicsUpdate((float)expected_frametime);
 		if(!io.WantCaptureMouse) {
 			MouseEvent ev = {io.MousePos.x, io.MousePos.y, 

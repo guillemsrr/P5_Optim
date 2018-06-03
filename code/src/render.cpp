@@ -10,7 +10,7 @@
 #include <iostream>
 
 #pragma region Global Variables
-static int mode = 1;
+extern int mode;
 //CHICKEN
 std::vector< glm::vec3 > chickenVertices;
 std::vector< glm::vec2 > chickenUvs;
@@ -84,6 +84,19 @@ void loadAllModels()
 	bool res = loadOBJ("trump.obj", trumpVertices, trumpUvs, trumpNormals);
 	res = loadOBJ("chicken.obj", chickenVertices, chickenUvs, chickenNormals);
 	Model::setupModels();
+}
+//Waves:
+float amplitude;
+float frequency;
+glm::vec3 waveDirection;//k
+float lambda;
+float phi;
+float k;
+float time;
+void gerstnerWave(glm::vec3 &pos, glm::vec3 x0, float time)
+{
+	pos -= waveDirection * k* amplitude * sin(glm::dot(waveDirection, x0) - frequency * time + phi);
+	pos.z += amplitude * cos(glm::dot(waveDirection, x0) - frequency* time + phi);
 }
 
 void drawLoop(double currentTime)
@@ -227,6 +240,19 @@ void GLinit(int width, int height) {
 	{
 		loadAllModels();
 		Model::setupModels();
+
+		//provisional initialization
+		amplitude = 0.5f;
+
+		frequency = 4.0f;
+
+		waveDirection = { 0.f, -1.f, 0.f };
+
+		lambda = 0.3f;
+
+		k = (lambda / (2 * glm::pi<float>()));
+
+		phi = 1.0f;
 	}
 	else if (mode == 2)
 	{
@@ -403,13 +429,17 @@ namespace Model
 
 	void updateTrump(double time)
 	{
+		glm::vec3 aux = trumpPosition;
+		gerstnerWave(aux, trumpPosition, time);
 		//TRUMP
-		updateModel(trumpObjMat, glm::translate(glm::mat4(), trumpPosition) * trumpScale);
+		updateModel(trumpObjMat, glm::translate(glm::mat4(), aux) * trumpScale);
 	}
 	void updateChicken(double time)
 	{
+		glm::vec3 aux = chickenPosition;
+		gerstnerWave(aux, chickenPosition, time);
 		//CHICKEN
-		updateModel(chickenObjMat, glm::translate(glm::mat4(), chickenPosition) * chickenScale);
+		updateModel(chickenObjMat, glm::translate(glm::mat4(), aux) * chickenScale);
 	}
 
 	void drawTrump(double time)
