@@ -30,6 +30,11 @@ std::vector< glm::vec3 > trumpNormals;
 
 glm::vec3 trumpPosition = { 0.f,0.f,0.f };
 
+//MultiDraw
+std::vector<glm::vec3> vertices;
+std::vector< glm::vec2 > uvs;
+std::vector< glm::vec3 > normals;
+
 #pragma endregion
 
 
@@ -64,6 +69,11 @@ namespace Model
 
 	void instancingDrawModels2(double time);
 	void instancingDraw2(GLuint &vao, glm::mat4 &objMat, std::vector < glm::vec3 > &vertices, glm::vec4 color, float time);
+
+	//MultiDrawIndirect
+	void setupMultiDraw();
+	void cleanupMultiDraw();
+	void renderMultiDraw();
 }
 namespace ImGui {
 	void Render();
@@ -102,7 +112,13 @@ void loadAllModels()
 {
 	bool res = loadOBJ("trump.obj", trumpVertices, trumpUvs, trumpNormals);
 	res = loadOBJ("chicken.obj", chickenVertices, chickenUvs, chickenNormals);
-	Model::setupModels();
+
+	//MultiDrawIndirect
+	res = loadOBJ("trump.obj", vertices, uvs, normals);
+	vertices.insert(vertices.end(), chickenVertices.begin(), chickenVertices.end());
+	normals.insert(normals.end(), chickenNormals.begin(), chickenNormals.end());
+
+	Model::setupModels();	// ¿?¿?
 }
 //Wave:
 const float amplitude = 0.5f;
@@ -257,7 +273,7 @@ void GLinit(int width, int height) {
 	}
 	else if (mode == 3)
 	{
-
+		Model::setupMultiDraw();
 	}
 }
 //////////////////////////////////////////////////////////////////////////////////////////////////// RENDER
@@ -280,7 +296,7 @@ void GLrender(double currentTime) {
 	}
 	else if (mode == 3)
 	{
-
+		Model::renderMultiDraw();
 	}
 
 	RV::_MVP = RV::_projection * RV::_modelView;
@@ -292,6 +308,7 @@ void GLrender(double currentTime) {
 void GLcleanup()
 {
 	Model::cleanupModels();
+	Model::cleanupMultiDraw();
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////// MODEL
@@ -301,10 +318,12 @@ namespace Model
 	//VAOs
 	GLuint trumpVao;
 	GLuint chickenVao;
+	GLuint multiVao;
 
 	//VBOs
 	GLuint trumpVbo[3];
 	GLuint chickenVbo[3];
+	GLuint multiVbo[3];
 
 	GLuint modelShaders[2];
 	GLuint modelProgram;
@@ -324,6 +343,17 @@ namespace Model
 
 	//INSTANCING:
 	glm::mat4 modelMatrices[NUM_ELEMENTS/2];
+
+	//MultiDrawIndirect
+	typedef  struct {
+		GLuint  count;
+		GLuint  primCount;
+		GLuint  first;
+		GLuint  baseInstance;
+	} DrawArraysIndirectCommand;
+	DrawArraysIndirectCommand cmd[2];
+
+	glm::mat4 multiobjMat = glm::mat4(1.f);
 	
 
 #pragma endregion
@@ -692,5 +722,104 @@ namespace Model
 
 		glDrawArraysInstanced(GL_TRIANGLES, 0, vertices.size() * 3, NUM_ELEMENTS / 2);
 	}
+#pragma endregion
+
+#pragma region MultiDrawIndirect
+
+	const char* multi_vertShader =
+		"#version 330\n\
+	in vec3 in_Position;\n\
+	in vec3 in_Normal;\n\
+	out vec4 vert_Normal;\n\
+	uniform mat4 objMat;\n\
+	uniform mat4 mv_Mat;\n\
+	uniform mat4 mvpMat;\n\
+	uniform vec3 offset;\n\
+	void main() {\n\
+		gl_Position = mvpMat * objMat * vec4(in_Position + vec3(gl_InstanceID*50, 0.0, 0.0), 1.0);\n\
+		vert_Normal = mv_Mat * objMat * vec4(in_Normal, 0.0);\n\
+	}";
+
+
+	const char* multi_fragShader =
+		"#version 330\n\
+	in vec4 vert_Normal;\n\
+	out vec4 out_Color;\n\
+	uniform mat4 mv_Mat;\n\
+	uniform vec4 color;\n\
+	void main() {\n\
+		out_Color = vec4(color.xyz * dot(vert_Normal, mv_Mat*vec4(0.0, 1.0, 0.0, 0.0)) + color.xyz * 0.3, 1.0 );\n\
+	}";
+
+	void setupMultiDraw() {
+		//Trump
+		cmd[0].count = vertices.size() - chickenVertices.size();
+		cmd[0].primCount = 5000;
+		cmd[0].first = 0;
+		cmd[0].baseInstance = 0;
+
+		//Chicken
+		cmd[1].count = chickenVertices.size();
+		cmd[1].primCount = 5000;
+		cmd[1].first = vertices.size() - chickenVertices.size();
+		cmd[1].baseInstance = 1;
+
+		glGenVertexArrays(1, &multiVao);
+		glBindVertexArray(multiVao);
+		glGenBuffers(3, multiVbo);
+
+		glBindBuffer(GL_ARRAY_BUFFER, multiVbo[0]);
+		glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), vertices.data(), GL_STATIC_DRAW);
+		glVertexAttribPointer((GLuint)0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+		glEnableVertexAttribArray(0);
+
+		glBindBuffer(GL_ARRAY_BUFFER, multiVbo[1]);
+		glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(glm::vec3), normals.data(), GL_STATIC_DRAW);
+		glVertexAttribPointer((GLuint)1, 3, GL_FLOAT, GL_FALSE, 0, 0);
+		glEnableVertexAttribArray(1);
+
+		glBindVertexArray(0);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+		modelShaders[0] = compileShader(multi_vertShader, GL_VERTEX_SHADER, "multiVertexShader");
+		modelShaders[1] = compileShader(multi_fragShader, GL_FRAGMENT_SHADER, "multiFragmentShader");
+
+		modelProgram = glCreateProgram();
+		glAttachShader(modelProgram, modelShaders[0]);
+		glAttachShader(modelProgram, modelShaders[1]);
+		glBindAttribLocation(modelProgram, 0, "in_Position");
+		glBindAttribLocation(modelProgram, 1, "in_Normal");
+		linkProgram(modelProgram);
+
+
+		glBindBuffer(GL_DRAW_INDIRECT_BUFFER, multiVbo[2]);
+		glBufferData(GL_DRAW_INDIRECT_BUFFER, sizeof(cmd), &cmd, GL_STATIC_DRAW);
+	}
+
+	void cleanupMultiDraw() {
+		glDeleteBuffers(2, multiVbo);
+		glDeleteVertexArrays(1, &multiVao);
+
+		glDeleteProgram(modelProgram);
+		glDeleteShader(modelShaders[0]);
+		glDeleteShader(modelShaders[1]);
+	}
+
+	void renderMultiDraw() {
+		glBindVertexArray(multiVao);
+		glBindBuffer(GL_DRAW_INDIRECT_BUFFER, multiVbo[2]);
+		glUseProgram(modelProgram);
+		glUniformMatrix4fv(glGetUniformLocation(modelProgram, "objMat"), 1, GL_FALSE, glm::value_ptr(multiobjMat));
+		glUniformMatrix4fv(glGetUniformLocation(modelProgram, "mv_Mat"), 1, GL_FALSE, glm::value_ptr(RenderVars::_modelView));
+		glUniformMatrix4fv(glGetUniformLocation(modelProgram, "mvpMat"), 1, GL_FALSE, glm::value_ptr(RenderVars::_MVP));
+		glUniform4f(glGetUniformLocation(modelProgram, "color"), 0.1f, 1.f, 1.f, 0.f);
+
+		glMultiDrawArraysIndirect(GL_TRIANGLES, 0, 2, 0);
+		std::cout << glewGetErrorString(glGetError()) << std::endl;
+
+		glUseProgram(0);
+		glBindVertexArray(0);
+	}
+
 #pragma endregion
 }

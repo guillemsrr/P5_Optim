@@ -7,7 +7,7 @@
 
 #include "GL_framework.h"
 
-extern int mode = 2;
+extern int mode = 3;
 int lastMode = mode;
 int display_w, display_h;
 

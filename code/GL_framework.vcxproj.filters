@@ -39,5 +39,8 @@
     <ClCompile Include="my_render_code.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="load_obj.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
