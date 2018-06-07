@@ -754,13 +754,13 @@ namespace Model
 	void setupMultiDraw() {
 		//Trump
 		cmd[0].count = vertices.size() - chickenVertices.size();
-		cmd[0].primCount = 5000;
+		cmd[0].primCount = NUM_ELEMENTS/2;
 		cmd[0].first = 0;
 		cmd[0].baseInstance = 0;
 
 		//Chicken
 		cmd[1].count = chickenVertices.size();
-		cmd[1].primCount = 5000;
+		cmd[1].primCount = NUM_ELEMENTS/2;
 		cmd[1].first = vertices.size() - chickenVertices.size();
 		cmd[1].baseInstance = 1;
 
