@@ -121,9 +121,8 @@ void loadAllModels()
 	res = loadOBJ("trump.obj", vertices, uvs, normals);
 	vertices.insert(vertices.end(), chickenVertices.begin(), chickenVertices.end());
 	normals.insert(normals.end(), chickenNormals.begin(), chickenNormals.end());
-
-	//Model::setupModels();	// ¿?¿?
 }
+
 //Wave:
 const float amplitude = 0.5f;
 const float frequency = 4.0f;
@@ -815,7 +814,7 @@ namespace Model
 
 	void setupMultiDraw() {
 		//Trump
-		cmd[0].count = vertices.size() - chickenVertices.size();
+		cmd[0].count = trumpVertices.size();
 		cmd[0].primCount = NUM_ELEMENTS/2;
 		cmd[0].first = 0;
 		cmd[0].baseInstance = 0;
@@ -823,7 +822,7 @@ namespace Model
 		//Chicken
 		cmd[1].count = chickenVertices.size();
 		cmd[1].primCount = NUM_ELEMENTS/2;
-		cmd[1].first = vertices.size() - chickenVertices.size();
+		cmd[1].first = trumpVertices.size();
 		cmd[1].baseInstance = 1;
 
 		glGenVertexArrays(1, &multiVao);
@@ -859,7 +858,7 @@ namespace Model
 	}
 
 	void cleanupMultiDraw() {
-		glDeleteBuffers(2, multiVbo);
+		glDeleteBuffers(3, multiVbo);
 		glDeleteVertexArrays(1, &multiVao);
 
 		glDeleteProgram(modelProgram);
