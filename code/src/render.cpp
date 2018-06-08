@@ -77,7 +77,7 @@ namespace Model
 	//MultiDrawIndirect
 	void setupMultiDraw();
 	void cleanupMultiDraw();
-	void renderMultiDraw();
+	void renderMultiDraw(float time);
 }
 namespace ImGui {
 	void Render();
@@ -307,7 +307,7 @@ void GLrender(double currentTime) {
 	}
 	else if (mode == 3)
 	{
-		Model::renderMultiDraw();
+		Model::renderMultiDraw(currentTime);
 	}
 
 	RV::_MVP = RV::_projection * RV::_modelView;
@@ -741,29 +741,77 @@ namespace Model
 #pragma region MultiDrawIndirect
 
 	const char* multi_vertShader =
-		"#version 330\n\
-	in vec3 in_Position;\n\
-	in vec3 in_Normal;\n\
-	out vec4 vert_Normal;\n\
-	uniform mat4 objMat;\n\
-	uniform mat4 mv_Mat;\n\
-	uniform mat4 mvpMat;\n\
-	uniform vec3 offset;\n\
-	void main() {\n\
-		gl_Position = mvpMat * objMat * vec4(in_Position + vec3(gl_InstanceID*50, 0.0, 0.0), 1.0);\n\
-		vert_Normal = mv_Mat * objMat * vec4(in_Normal, 0.0);\n\
-	}";
+		"#version 460\n\
+		in vec3 in_Position;\n\
+		in vec3 in_Normal;\n\
+		flat out int fragID;\n\
+		flat out int baseID;\n\
+		\n\
+		out vec4 vert_Normal;\n\
+		uniform mat4 chickenScale;\n\
+		uniform mat4 trumpScale;\n\
+		uniform mat4 mv_Mat;\n\
+		uniform mat4 mvpMat;\n\
+		uniform float time;\n\
+		uniform vec3 chickenOffset;\n\
+		uniform vec3 trumpOffset;\n\
+		\n\
+		//Wave:\n\
+		float amplitude = 0.5f;\n\
+		float frequency = 4.0f;\n\
+		vec3 waveDirection = vec3( 0.f, -1.f, 0.f );\n\
+		float lambda = 0.3f;\n\
+		float phi = 1.0f;\n\
+		uniform float k;\n\
+		\n\
+		vec3 gerstnerWave(vec3 pos, vec3 x0, float time)\n\
+		{\n\
+			pos -= waveDirection * k* amplitude * sin(dot(waveDirection, x0) - frequency * time + phi);\n\
+			pos.z += amplitude * cos(dot(waveDirection, x0) - frequency * time + phi);\n\
+			return pos;\n\
+		}\n\
+		\n\
+		\n\
+		void main() {\n\
+			vec3 position;\n\
+			if(gl_BaseInstance == 0)\n\
+				position = vec3((gl_InstanceID%50)*2.f, -gl_InstanceID/50*3.0f,0.f) + trumpOffset;\n\
+			else\n\
+				position = vec3((gl_InstanceID%50)*2.f, -gl_InstanceID/50*3.0f,0.f) + chickenOffset;\n\
+			position = gerstnerWave(position, position, time);\n\
+			mat4 translation = mat4(1.0, 0.0, 0.0, 0.0,    0.0, 1.0, 0.0, 0.0,    0.0, 0.0, 1.0, 0.0,    position.x, position.y, position.z, 1.0); \n\
+			if(gl_BaseInstance == 0){\n\
+				gl_Position = mvpMat *translation * trumpScale * vec4(in_Position, 1.0);\n\
+				vert_Normal = mv_Mat * translation* trumpScale * vec4(in_Normal, 0.0);\n\
+			}else{\n\
+				gl_Position = mvpMat *translation * chickenScale * vec4(in_Position, 1.0);\n\
+				vert_Normal = mv_Mat * translation* chickenScale * vec4(in_Normal, 0.0);\n\
+			}\n\
+			//pass color to fragShader:\n\
+			fragID = gl_InstanceID;\n\
+			baseID = gl_BaseInstance;\n\
+		}";
 
 
 	const char* multi_fragShader =
-		"#version 330\n\
-	in vec4 vert_Normal;\n\
-	out vec4 out_Color;\n\
-	uniform mat4 mv_Mat;\n\
-	uniform vec4 color;\n\
-	void main() {\n\
-		out_Color = vec4(color.xyz * dot(vert_Normal, mv_Mat*vec4(0.0, 1.0, 0.0, 0.0)) + color.xyz * 0.3, 1.0 );\n\
-	}";
+		"#version 460\n\
+		in vec4 vert_Normal;\n\
+		out vec4 out_Color;\n\
+		uniform mat4 mv_Mat;\n\
+		flat in int fragID;\n\
+		flat in int baseID;\n\
+		uniform vec4 trumpColor;\n\
+		uniform vec4 chickenColor;\n\
+		vec4 trumpGradedColor = trumpColor;\n\
+		vec4 chickenGradedColor = chickenColor;\n\
+		void main() {\n\
+			chickenGradedColor.x = trumpGradedColor.x = (fragID%50)/30.0;\n\
+			chickenGradedColor.z = trumpGradedColor.z = (fragID%50)/30.0;\n\
+			if(baseID == 0)\n\
+				out_Color = vec4(trumpGradedColor.xyz * dot(normalize(vert_Normal), mv_Mat*vec4(0.0, 1.0, 0.0, 0.0)) + trumpGradedColor.xyz * 0.3, 1.0 );\n\
+			else\n\
+				out_Color = vec4(chickenGradedColor.xyz * dot(normalize(vert_Normal), mv_Mat*vec4(0.0, 1.0, 0.0, 0.0)) + chickenGradedColor.xyz * 0.3, 1.0 );\n\
+		}";
 
 	void setupMultiDraw() {
 		//Trump
@@ -819,17 +867,27 @@ namespace Model
 		glDeleteShader(modelShaders[1]);
 	}
 
-	void renderMultiDraw() {
+	void renderMultiDraw(float time) {
 		glBindVertexArray(multiVao);
 		glBindBuffer(GL_DRAW_INDIRECT_BUFFER, multiVbo[2]);
 		glUseProgram(modelProgram);
+
 		glUniformMatrix4fv(glGetUniformLocation(modelProgram, "objMat"), 1, GL_FALSE, glm::value_ptr(multiobjMat));
 		glUniformMatrix4fv(glGetUniformLocation(modelProgram, "mv_Mat"), 1, GL_FALSE, glm::value_ptr(RenderVars::_modelView));
 		glUniformMatrix4fv(glGetUniformLocation(modelProgram, "mvpMat"), 1, GL_FALSE, glm::value_ptr(RenderVars::_MVP));
-		glUniform4f(glGetUniformLocation(modelProgram, "color"), 0.1f, 1.f, 1.f, 0.f);
+		glUniform4f(glGetUniformLocation(modelProgram, "trumpColor"), trumpColor.x, trumpColor.y, trumpColor.z, trumpColor.t);
+		glUniform4f(glGetUniformLocation(modelProgram, "chickenColor"), chickenColor.x, chickenColor.y, chickenColor.z, chickenColor.t);
+
+		glUniformMatrix4fv(glGetUniformLocation(modelProgram, "chickenScale"), 1, GL_FALSE, glm::value_ptr(chickenScale));
+		glUniformMatrix4fv(glGetUniformLocation(modelProgram, "trumpScale"), 1, GL_FALSE, glm::value_ptr(trumpScale));
+		glUniformMatrix4fv(glGetUniformLocation(modelProgram, "mv_Mat"), 1, GL_FALSE, glm::value_ptr(RenderVars::_modelView));
+		glUniformMatrix4fv(glGetUniformLocation(modelProgram, "mvpMat"), 1, GL_FALSE, glm::value_ptr(RenderVars::_MVP));
+		glUniform1f(glGetUniformLocation(modelProgram, "time"), time);
+		glUniform1f(glGetUniformLocation(modelProgram, "k"), k);
+		glUniform3f(glGetUniformLocation(modelProgram, "chickenOffset"), chickenOffset.x, chickenOffset.y, chickenOffset.z);
+		glUniform3f(glGetUniformLocation(modelProgram, "trumpOffset"), 0.f, 0.f, 0.f);
 
 		glMultiDrawArraysIndirect(GL_TRIANGLES, 0, 2, 0);
-		//std::cout << glewGetErrorString(glGetError()) << std::endl;
 
 		glUseProgram(0);
 		glBindVertexArray(0);
