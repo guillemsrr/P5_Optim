@@ -142,17 +142,18 @@ void drawLoop(double currentTime)
 {
 	for (int i = 0; i <= NUM_ELEMENTS/2; i++)
 	{
+		//colors
+		Model::chickenColor.z = (float)(i % 50) / 30.0f;
+		Model::trumpColor.x = (float)(i % 50) / 30.0f;
+		Model::chickenColor.x = (float)(i % 50) / 30.0f;
+		Model::trumpColor.z = (float)(i % 50) / 30.0f;
+
 		trumpPosition = glm::vec3((i % 50)*2.f, -i / 50 * 3.f, 0.f);
 		Model::updateTrump(currentTime);
 		Model::drawTrump(currentTime);
 		chickenPosition = glm::vec3((i % 50)*2.f, -i / 50 * 3.f, 0.f) + chickenOffset;
 		Model::updateChicken(currentTime);
 		Model::drawChicken(currentTime);
-
-		/*Model::chickenColor.x += (float)(i % 50) / 30.0f;
-		Model::chickenColor.z += (float)(i % 50) / 30.0f;
-		Model::trumpColor.x += (float)(i % 50) / 30.0f;
-		Model::trumpColor.z += (float)(i % 50) / 30.0f;*/
 	}
 }
 
@@ -558,8 +559,8 @@ namespace Model
 		uniform vec4 color;\n\
 		vec4 gradedColor = color;\n\;\n\
 		void main() {\n\
-			gradedColor.x += (fragID%50)/30.0;\n\
-			gradedColor.z += (fragID%50)/30.0;\n\
+			gradedColor.x = (fragID%50)/30.0;\n\
+			gradedColor.z = (fragID%50)/30.0;\n\
 			out_Color = vec4(gradedColor.xyz * dot(normalize(vert_Normal), mv_Mat*vec4(0.0, 1.0, 0.0, 0.0)) + gradedColor.xyz * 0.3, 1.0 );\n\
 		}";
 
