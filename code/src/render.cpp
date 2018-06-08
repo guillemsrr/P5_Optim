@@ -118,7 +118,7 @@ void loadAllModels()
 	vertices.insert(vertices.end(), chickenVertices.begin(), chickenVertices.end());
 	normals.insert(normals.end(), chickenNormals.begin(), chickenNormals.end());
 
-	Model::setupModels();	// ¿?¿?
+	//Model::setupModels();	// ¿?¿?
 }
 //Wave:
 const float amplitude = 0.5f;
@@ -261,7 +261,7 @@ void GLinit(int width, int height) {
 	RV::rota[0] = 0.f;
 	RV::rota[1] = 0.f;
 
-	loadAllModels();
+	//loadAllModels();
 
 	if (mode == 1)
 	{
@@ -815,7 +815,7 @@ namespace Model
 		glUniform4f(glGetUniformLocation(modelProgram, "color"), 0.1f, 1.f, 1.f, 0.f);
 
 		glMultiDrawArraysIndirect(GL_TRIANGLES, 0, 2, 0);
-		std::cout << glewGetErrorString(glGetError()) << std::endl;
+		//std::cout << glewGetErrorString(glGetError()) << std::endl;
 
 		glUseProgram(0);
 		glBindVertexArray(0);

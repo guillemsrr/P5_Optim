@@ -7,7 +7,7 @@
 
 #include "GL_framework.h"
 
-extern int mode = 3;
+extern int mode = 1;
 int lastMode = mode;
 int display_w, display_h;
 
@@ -21,6 +21,7 @@ extern void GLResize(int width, int height);
 extern void GLinit(int width, int height);
 extern void GLcleanup();
 extern void GLrender(double currentTime);
+extern void loadAllModels();
 
 
 //extern void myRenderCode(double currentTime);
@@ -90,6 +91,7 @@ int main(int argc, char** argv) {
 
 	SDL_GL_GetDrawableSize(mainwindow, &display_w, &display_h);
 	// Init scene
+	loadAllModels();
 	GLinit(display_w, display_h);
 	//PhysicsInit();
 
@@ -126,6 +128,7 @@ int main(int argc, char** argv) {
 		//RELOAD INIT************************************************************************************************************************
 		if (lastMode != mode)
 		{
+			GLcleanup();
 			GLinit(display_w, display_h);
 			lastMode = mode;
 		}
