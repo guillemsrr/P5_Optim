@@ -20,7 +20,7 @@ int nCols = NUM_ELEMENTS/100;
 std::vector< glm::vec3 > chickenVertices;
 std::vector< glm::vec2 > chickenUvs;
 std::vector< glm::vec3 > chickenNormals;
-
+glm::vec3 chickenOffset = { 1.f,0.5f,0.f };
 glm::vec3 chickenPosition = { 0.f,0.f,0.f };
 
 //TRUMP
@@ -41,6 +41,10 @@ std::vector< glm::vec3 > normals;
 #pragma region Namespaces
 namespace Model
 {
+	//color
+	glm::vec4 trumpColor = { 0.f,0.f,1.f,1.f };
+	glm::vec4 chickenColor = { 1.f,1.f,0.f,1.f };
+	
 	//basic draw loop
 	void setupModels();
 	void setupSpecificModel(GLuint &vao, GLuint vbo[], std::vector < glm::vec3 > &vertices, std::vector < glm::vec3 > &normals);
@@ -136,16 +140,19 @@ void gerstnerWave(glm::vec3 &pos, glm::vec3 x0, float time)
 
 void drawLoop(double currentTime)
 {
-	glm::vec3 chickenOffset = { 0.f,1.2f,0.f };
-
-	for (int i = 1; i <= NUM_ELEMENTS/2; i++)//columnes
+	for (int i = 0; i <= NUM_ELEMENTS/2; i++)
 	{
-		trumpPosition = glm::vec3((i % 50)*2.f, -i / 50 * 2.6f, 0.f);
+		trumpPosition = glm::vec3((i % 50)*2.f, -i / 50 * 3.f, 0.f);
 		Model::updateTrump(currentTime);
 		Model::drawTrump(currentTime);
-		chickenPosition = glm::vec3((i % 50)*2.f, -i / 50 * 2.6f, 0.f) + chickenOffset;
+		chickenPosition = glm::vec3((i % 50)*2.f, -i / 50 * 3.f, 0.f) + chickenOffset;
 		Model::updateChicken(currentTime);
 		Model::drawChicken(currentTime);
+
+		/*Model::chickenColor.x += (float)(i % 50) / 30.0f;
+		Model::chickenColor.z += (float)(i % 50) / 30.0f;
+		Model::trumpColor.x += (float)(i % 50) / 30.0f;
+		Model::trumpColor.z += (float)(i % 50) / 30.0f;*/
 	}
 }
 
@@ -255,13 +262,16 @@ void GLinit(int width, int height) {
 	RV::_projection = glm::perspective(RV::FOV, (float)width/(float)height, RV::zNear, RV::zFar);
 	RV::panv[0] = 0.f;
 	RV::panv[1] = 0.f;
-	//RV::panv[0] = -50.f;
-	//RV::panv[1] = 50.f;
-	RV::panv[2] = -50.f;
+	RV::panv[0] = -50.f;
+	RV::panv[1] = 30.f;
+	RV::panv[2] = -70.f;
 	RV::rota[0] = 0.f;
 	RV::rota[1] = 0.f;
 
 	//loadAllModels();
+	//COLORS:
+	Model::trumpColor = { 0.f,0.f,1.f,1.f };
+	Model::chickenColor = { 1.f,1.f,0.f,1.f };
 
 	if (mode == 1)
 	{
@@ -335,11 +345,7 @@ namespace Model
 
 	//SCALE MATRICES
 	glm::mat4 trumpScale = glm::scale(glm::mat4(), glm::vec3(0.1, 0.1, 0.1));
-	glm::mat4 chickenScale = glm::scale(glm::mat4(), glm::vec3(0.01, 0.01, 0.01));
-
-	//COLORS:
-	glm::vec4 trumpColor = { 0.f,0.f,1.f,1.f };
-	glm::vec4 chickenColor = { 1.f,1.f,0.f,1.f };
+	glm::mat4 chickenScale = glm::scale(glm::mat4(), glm::vec3(0.02, 0.02, 0.02));
 
 	//INSTANCING:
 	glm::mat4 modelMatrices[NUM_ELEMENTS/2];
@@ -509,6 +515,7 @@ namespace Model
 		"#version 330\n\
 		in vec3 in_Position;\n\
 		in vec3 in_Normal;\n\
+		flat out int fragID;\n\
 		\n\
 		out vec4 vert_Normal;\n\
 		uniform mat4 scale;\n\
@@ -534,20 +541,26 @@ namespace Model
 		\n\
 		\n\
 		void main() {\n\
-			vec3 position = vec3((gl_InstanceID%50)*2.f, -gl_InstanceID/50*2.6f,0.f) + offset;\n\
+			vec3 position = vec3((gl_InstanceID%50)*2.f, -gl_InstanceID/50*3.0f,0.f) + offset;\n\
 			position = gerstnerWave(position, position, time);\n\
-			mat4 translation = mat4(1.0, 0.0, 0.0, 0.0,    0.0, 1.0, 0.0, 0.0,    0.0, 0.0, 1.0, 0.0,    position.x, position.y, 0.0, 1.0); \n\
+			mat4 translation = mat4(1.0, 0.0, 0.0, 0.0,    0.0, 1.0, 0.0, 0.0,    0.0, 0.0, 1.0, 0.0,    position.x, position.y, position.z, 1.0); \n\
 			gl_Position = mvpMat *translation * scale * vec4(in_Position, 1.0);\n\
 			vert_Normal = mv_Mat * translation* scale * vec4(in_Normal, 0.0);\n\
+			//pass color to fragShader:\n\
+			fragID = gl_InstanceID;\n\
 		}";
 	const char* instancing_fragShader =
 		"#version 330\n\
 		in vec4 vert_Normal;\n\
 		out vec4 out_Color;\n\
 		uniform mat4 mv_Mat;\n\
+		flat in int fragID;\n\
 		uniform vec4 color;\n\
+		vec4 gradedColor = color;\n\;\n\
 		void main() {\n\
-			out_Color = vec4(color.xyz * dot(normalize(vert_Normal), mv_Mat*vec4(0.0, 1.0, 0.0, 0.0)) + color.xyz * 0.3, 1.0 );\n\
+			gradedColor.x += (fragID%50)/30.0;\n\
+			gradedColor.z += (fragID%50)/30.0;\n\
+			out_Color = vec4(gradedColor.xyz * dot(normalize(vert_Normal), mv_Mat*vec4(0.0, 1.0, 0.0, 0.0)) + gradedColor.xyz * 0.3, 1.0 );\n\
 		}";
 
 	void instancingSetupModels()
@@ -590,8 +603,8 @@ namespace Model
 
 	void instancingDrawModels(double time)
 	{
-		instancingDraw(trumpVao, trumpScale, trumpVertices, trumpColor, time, glm::vec3 { 0.f,1.2f,0.f });
-		instancingDraw(chickenVao, chickenScale, chickenVertices, chickenColor, time, glm::vec3 { 0.f,0.f,0.f });
+		instancingDraw(trumpVao, trumpScale, trumpVertices, trumpColor, time, glm::vec3{ 0.f,0.f,0.f });
+		instancingDraw(chickenVao, chickenScale, chickenVertices, chickenColor, time, chickenOffset);
 
 		glUseProgram(0);
 		glBindVertexArray(0);

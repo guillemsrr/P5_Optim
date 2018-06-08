@@ -1,6 +1,0 @@
-﻿  render.cpp
-d:\guillemserra\p5_optim\code\src\render.cpp(46): error C2065: 'show_test_window': undeclared identifier
-d:\guillemserra\p5_optim\code\src\render.cpp(49): error C2065: 'show_test_window': undeclared identifier
-d:\guillemserra\p5_optim\code\src\render.cpp(345): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-d:\guillemserra\p5_optim\code\src\render.cpp(346): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-d:\guillemserra\p5_optim\code\src\render.cpp(365): warning C4267: 'argument': conversion from 'size_t' to 'GLsizei', possible loss of data
